@@ -122,6 +122,9 @@ EOD;
         $worksheet->setFilePointer($sheetFilePointer);
 
         \fwrite($sheetFilePointer, self::SHEET_XML_FILE_HEADER);
+
+        $this->hasWrittenRows = false;
+        $this->columnWidths = [];
     }
 
     /**
