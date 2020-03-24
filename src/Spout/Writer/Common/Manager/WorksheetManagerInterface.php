@@ -12,6 +12,12 @@ use Box\Spout\Writer\Common\Entity\Worksheet;
 interface WorksheetManagerInterface
 {
     /**
+     * @param Worksheet $worksheet
+     * @param string $range
+     */
+    public function setAutoFilter(Worksheet $worksheet, ?string $range);
+
+    /**
      * @param float|null $width
      */
     public function setDefaultColumnWidth($width);

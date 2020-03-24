@@ -48,6 +48,11 @@ interface WorkbookManagerInterface
     public function startCurrentSheet();
 
     /**
+     * @param string $range
+     */
+    public function setAutoFilter(?string $range);
+
+    /**
      * @param float $width
      */
     public function setDefaultColumnWidth(float $width);

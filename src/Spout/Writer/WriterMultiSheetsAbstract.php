@@ -141,6 +141,16 @@ abstract class WriterMultiSheetsAbstract extends WriterAbstract
     }
 
     /**
+     * @param string $range
+     * @throws WriterNotOpenedException
+     */
+    public function setAutoFilter(?string $range)
+    {
+        $this->throwIfWorkbookIsNotAvailable();
+        $this->workbookManager->setAutoFilter($range);
+    }
+
+    /**
      * @param float $width
      * @throws WriterNotOpenedException
      */

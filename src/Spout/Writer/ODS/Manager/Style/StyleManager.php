@@ -5,6 +5,7 @@ namespace Box\Spout\Writer\ODS\Manager\Style;
 use Box\Spout\Common\Entity\Style\BorderPart;
 use Box\Spout\Common\Entity\Style\CellAlignment;
 use Box\Spout\Writer\Common\Entity\Worksheet;
+use Box\Spout\Writer\Common\Manager\AutoFilter;
 use Box\Spout\Writer\Common\Manager\ManagesCellSize;
 use Box\Spout\Writer\ODS\Helper\BorderHelper;
 
@@ -14,6 +15,7 @@ use Box\Spout\Writer\ODS\Helper\BorderHelper;
  */
 class StyleManager extends \Box\Spout\Writer\Common\Manager\Style\StyleManager
 {
+    use AutoFilter;
     use ManagesCellSize;
 
     /** @var StyleRegistry */

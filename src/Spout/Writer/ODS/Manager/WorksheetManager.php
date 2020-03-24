@@ -245,6 +245,15 @@ class WorksheetManager implements WorksheetManagerInterface
     }
 
     /**
+     * @param Worksheet $worksheet
+     * @param string $range
+     */
+    public function setAutoFilter(Worksheet $worksheet, ?string $range)
+    {
+        $this->styleManager->setAutoFilter($worksheet, $range);
+    }
+
+    /**
      * @param float|null $width
      */
     public function setDefaultColumnWidth($width)

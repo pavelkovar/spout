@@ -288,6 +288,14 @@ abstract class WorkbookManagerAbstract implements WorkbookManagerInterface
     }
 
     /**
+     * @param string $range
+     */
+    public function setAutoFilter(?string $range)
+    {
+        $this->worksheetManager->setAutoFilter($this->getCurrentWorksheet(), $range);
+    }
+
+    /**
      * @param float $width
      */
     public function setDefaultColumnWidth(float $width)

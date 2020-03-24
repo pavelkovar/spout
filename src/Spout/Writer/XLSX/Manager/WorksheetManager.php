@@ -14,6 +14,7 @@ use Box\Spout\Writer\Common\Creator\InternalEntityFactory;
 use Box\Spout\Writer\Common\Entity\Options;
 use Box\Spout\Writer\Common\Entity\Worksheet;
 use Box\Spout\Writer\Common\Helper\CellHelper;
+use Box\Spout\Writer\Common\Manager\AutoFilter;
 use Box\Spout\Writer\Common\Manager\ManagesCellSize;
 use Box\Spout\Writer\Common\Manager\RowManager;
 use Box\Spout\Writer\Common\Manager\Style\StyleMerger;
@@ -26,6 +27,7 @@ use Box\Spout\Writer\XLSX\Manager\Style\StyleManager;
  */
 class WorksheetManager implements WorksheetManagerInterface
 {
+    use AutoFilter;
     use ManagesCellSize;
 
     /**
@@ -125,6 +127,7 @@ EOD;
 
         $this->hasWrittenRows = false;
         $this->columnWidths = [];
+        $this->autoFilterRange = null;
     }
 
     /**
@@ -317,6 +320,16 @@ EOD;
     }
 
     /**
+     * Constructs auto filter xml fragment.
+     *
+     * @return string
+     */
+    public function getXMLFragmentForAutoFilter(string $range)
+    {
+        return '<autoFilter ref="' . $range . '"/>';
+    }
+
+    /**
      * {@inheritdoc}
      */
     public function close(Worksheet $worksheet)
@@ -329,6 +342,11 @@ EOD;
 
         if ($this->hasWrittenRows) {
             \fwrite($worksheetFilePointer, '</sheetData>');
+        }
+
+        $autoFilterRange = $this->getAutoFilter($worksheet);
+        if ($autoFilterRange !== null){
+            \fwrite($worksheetFilePointer, $this->getXMLFragmentForAutoFilter($autoFilterRange));
         }
         \fwrite($worksheetFilePointer, '</worksheet>');
         \fclose($worksheetFilePointer);
