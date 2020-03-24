@@ -12,6 +12,7 @@ use Box\Spout\Common\Helper\StringHelper;
 use Box\Spout\Common\Manager\OptionsManagerInterface;
 use Box\Spout\Writer\Common\Creator\InternalEntityFactory;
 use Box\Spout\Writer\Common\Entity\Options;
+use Box\Spout\Writer\Common\Entity\View\SheetView;
 use Box\Spout\Writer\Common\Entity\Worksheet;
 use Box\Spout\Writer\Common\Helper\CellHelper;
 use Box\Spout\Writer\Common\Manager\AutoFilter;
@@ -168,6 +169,11 @@ EOD;
     {
         $sheetFilePointer = $worksheet->getFilePointer();
         if (!$this->hasWrittenRows) {
+            $sheetView = $worksheet->getExternalSheet()->getSheetView();
+            if ($sheetView !== null) {
+                fwrite($sheetFilePointer, $this->getXMLFragmentForSheetView($sheetView));
+            }
+
             fwrite($sheetFilePointer, $this->getXMLFragmentForDefaultCellSizing());
             fwrite($sheetFilePointer, $this->getXMLFragmentForColumnWidths());
             fwrite($sheetFilePointer, '<sheetData>');
@@ -326,6 +332,41 @@ EOD;
     public function getXMLFragmentForAutoFilter(string $range)
     {
         return '<autoFilter ref="' . $range . '"/>';
+    }
+
+    /**
+     * Construct sheet view XML fragment.
+     *
+     * @param SheetView $sheetView
+     * @return string
+     */
+    public function getXMLFragmentForSheetView(SheetView $sheetView)
+    {
+        $pane = $sheetView->getPane();
+        $paneXml = sprintf(
+            '<pane activePane="%s" state="%s" %s%s%s/>',
+            $pane->getActivePane(),
+            $pane->getState(),
+            empty($pane->getTopLeftCell()) ? '' : (' topLeftCell="' . $pane->getTopLeftCell() . '"'),
+            ($pane->getXSplit() === null) ? '' : (' xSplit="' . $pane->getXSplit() . '"'),
+            ($pane->getYSplit() === null) ? '' : (' ySplit="' . $pane->getYSplit() . '"')
+        );
+
+        $selectionXml = '';
+        foreach ($sheetView->getSelections() as $selection) {
+            $selectionXml .= sprintf(
+                '<selection activeCell="%s" pane="%s" sqref="%s"/>',
+                $selection->getActiveCell(),
+                $selection->getPane(),
+                $selection->getSqref()
+            );
+        }
+
+        return sprintf(
+            '<sheetViews><sheetView workbookViewId="0">%s%s</sheetView></sheetViews>',
+            $paneXml,
+            $selectionXml
+        );
     }
 
     /**

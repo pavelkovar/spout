@@ -2,6 +2,7 @@
 
 namespace Box\Spout\Writer\Common\Entity;
 
+use Box\Spout\Writer\Common\Entity\View\SheetView;
 use Box\Spout\Writer\Common\Manager\SheetManager;
 
 /**
@@ -26,6 +27,9 @@ class Sheet
 
     /** @var SheetManager Sheet manager */
     private $sheetManager;
+
+    /** @var SheetView */
+    private $sheetView;
 
     /**
      * @param int $sheetIndex Index of the sheet, based on order in the workbook (zero-based)
@@ -107,5 +111,21 @@ class Sheet
         $this->isVisible = $isVisible;
 
         return $this;
+    }
+
+    /**
+     * @param SheetView $sheetView
+     */
+    public function setSheetView(SheetView $sheetView)
+    {
+        $this->sheetView = $sheetView;
+    }
+
+    /**
+     * @return SheetView
+     */
+    public function getSheetView()
+    {
+        return $this->sheetView;
     }
 }
