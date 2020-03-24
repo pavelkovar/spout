@@ -127,7 +127,6 @@ EOD;
 
         $this->hasWrittenRows = false;
         $this->columnWidths = [];
-        $this->autoFilterRange = null;
     }
 
     /**
