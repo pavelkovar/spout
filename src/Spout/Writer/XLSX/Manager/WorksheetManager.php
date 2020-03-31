@@ -10,7 +10,6 @@ use Box\Spout\Common\Exception\IOException;
 use Box\Spout\Common\Helper\Escaper\XLSX as XLSXEscaper;
 use Box\Spout\Common\Helper\StringHelper;
 use Box\Spout\Common\Manager\OptionsManagerInterface;
-use Box\Spout\Writer\Common\Creator\InternalEntityFactory;
 use Box\Spout\Writer\Common\Entity\Options;
 use Box\Spout\Writer\Common\Entity\View\SheetView;
 use Box\Spout\Writer\Common\Entity\Worksheet;
@@ -65,8 +64,8 @@ EOD;
     /** @var StringHelper String helper */
     private $stringHelper;
 
-    /** @var InternalEntityFactory Factory to create entities */
-    private $entityFactory;
+    /** @var WorksheetRelsManager */
+    private $relsManager;
 
     /** @var bool Whether rows have been written */
     private $hasWrittenRows = false;
@@ -81,7 +80,7 @@ EOD;
      * @param SharedStringsManager $sharedStringsManager
      * @param XLSXEscaper $stringsEscaper
      * @param StringHelper $stringHelper
-     * @param InternalEntityFactory $entityFactory
+     * @param WorksheetRelsManager $relsManager
      */
     public function __construct(
         OptionsManagerInterface $optionsManager,
@@ -91,8 +90,9 @@ EOD;
         SharedStringsManager $sharedStringsManager,
         XLSXEscaper $stringsEscaper,
         StringHelper $stringHelper,
-        InternalEntityFactory $entityFactory
-    ) {
+        WorksheetRelsManager $relsManager
+    )
+    {
         $this->shouldUseInlineStrings = $optionsManager->getOption(Options::SHOULD_USE_INLINE_STRINGS);
         $this->setDefaultColumnWidth($optionsManager->getOption(Options::DEFAULT_COLUMN_WIDTH));
         $this->setDefaultRowHeight($optionsManager->getOption(Options::DEFAULT_ROW_HEIGHT));
@@ -103,7 +103,7 @@ EOD;
         $this->sharedStringsManager = $sharedStringsManager;
         $this->stringsEscaper = $stringsEscaper;
         $this->stringHelper = $stringHelper;
-        $this->entityFactory = $entityFactory;
+        $this->relsManager = $relsManager;
     }
 
     /**
@@ -134,8 +134,8 @@ EOD;
      * Checks if the sheet has been sucessfully created. Throws an exception if not.
      *
      * @param bool|resource $sheetFilePointer Pointer to the sheet data file or FALSE if unable to open the file
-     * @throws IOException If the sheet data file cannot be opened for writing
      * @return void
+     * @throws IOException If the sheet data file cannot be opened for writing
      */
     private function throwIfSheetFilePointerIsNotAvailable($sheetFilePointer)
     {
@@ -161,9 +161,9 @@ EOD;
      *
      * @param Worksheet $worksheet The worksheet to add the row to
      * @param Row $row The row to be written
-     * @throws InvalidArgumentException If a cell value's type is not supported
-     * @throws IOException If the data cannot be written
      * @return void
+     * @throws IOException If the data cannot be written
+     * @throws InvalidArgumentException If a cell value's type is not supported
      */
     private function addNonEmptyRow(Worksheet $worksheet, Row $row)
     {
@@ -208,8 +208,8 @@ EOD;
      * @param int $rowIndexOneBased
      * @param int $columnIndexZeroBased
      *
-     * @throws InvalidArgumentException If the given value cannot be processed
      * @return string
+     * @throws InvalidArgumentException If the given value cannot be processed
      */
     private function applyStyleAndGetCellXML(Cell $cell, Style $rowStyle, $rowIndexOneBased, $columnIndexZeroBased)
     {
@@ -231,8 +231,8 @@ EOD;
      * @param Cell $cell
      * @param int $styleId
      *
-     * @throws InvalidArgumentException If the given value cannot be processed
      * @return string
+     * @throws InvalidArgumentException If the given value cannot be processed
      */
     private function getCellXML($rowIndexOneBased, $columnIndexZeroBased, Cell $cell, $styleId)
     {
@@ -243,7 +243,7 @@ EOD;
         if ($cell->isString()) {
             $cellXML .= $this->getCellXMLFragmentForNonEmptyString($cell->getValue());
         } elseif ($cell->isBoolean()) {
-            $cellXML .= ' t="b"><v>' . (int) ($cell->getValue()) . '</v></c>';
+            $cellXML .= ' t="b"><v>' . (int)($cell->getValue()) . '</v></c>';
         } elseif ($cell->isNumeric()) {
             $cellXML .= '><v>' . $cell->getValue() . '</v></c>';
         } elseif ($cell->isError() && is_string($cell->getValueEvenIfError())) {
@@ -268,8 +268,8 @@ EOD;
      * Returns the XML fragment for a cell containing a non empty string
      *
      * @param string $cellValue The cell value
-     * @throws InvalidArgumentException If the string exceeds the maximum number of characters allowed per cell
      * @return string The XML fragment representing the cell
+     * @throws InvalidArgumentException If the string exceeds the maximum number of characters allowed per cell
      */
     private function getCellXMLFragmentForNonEmptyString($cellValue)
     {
@@ -370,6 +370,24 @@ EOD;
     }
 
     /**
+     * Construct hyper links XML fragment.
+     *
+     * @param string[] $links
+     */
+    public function getXMLFragmentForHyperlinks(Worksheet $worksheet, $links)
+    {
+        $xml = '';
+        foreach ($links as $cell => $link) {
+            $id = $this->relsManager->writeHypertextRelation($worksheet, $link);
+
+            $xml .= sprintf('<hyperlink display="%s" r:id="%s" ref="%s" />', $this->stringsEscaper->escape($link), $id, $cell);
+        }
+
+        $this->relsManager->close($worksheet);
+        return '<hyperlinks>' . $xml . '</hyperlinks>';
+    }
+
+    /**
      * {@inheritdoc}
      */
     public function close(Worksheet $worksheet)
@@ -385,8 +403,13 @@ EOD;
         }
 
         $autoFilterRange = $this->getAutoFilter($worksheet);
-        if ($autoFilterRange !== null){
+        if ($autoFilterRange !== null) {
             \fwrite($worksheetFilePointer, $this->getXMLFragmentForAutoFilter($autoFilterRange));
+        }
+
+        $hyperLinks = $worksheet->getExternalSheet()->getSheetHyperlinks();
+        if (count($hyperLinks) > 0) {
+            \fwrite($worksheetFilePointer, $this->getXMLFragmentForHyperlinks($worksheet, $hyperLinks));
         }
         \fwrite($worksheetFilePointer, '</worksheet>');
         \fclose($worksheetFilePointer);

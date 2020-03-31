@@ -9,11 +9,13 @@ use Box\Spout\Writer\Common\Entity\Options;
 use Box\Spout\Writer\Common\Manager\RowManager;
 use Box\Spout\Writer\Common\Manager\SheetManager;
 use Box\Spout\Writer\Common\Manager\Style\StyleMerger;
+use Box\Spout\Writer\XLSX\Helper\FileSystemHelper;
 use Box\Spout\Writer\XLSX\Manager\SharedStringsManager;
 use Box\Spout\Writer\XLSX\Manager\Style\StyleManager;
 use Box\Spout\Writer\XLSX\Manager\Style\StyleRegistry;
 use Box\Spout\Writer\XLSX\Manager\WorkbookManager;
 use Box\Spout\Writer\XLSX\Manager\WorksheetManager;
+use Box\Spout\Writer\XLSX\Manager\WorksheetRelsManager;
 
 /**
  * Class ManagerFactory
@@ -27,6 +29,9 @@ class ManagerFactory implements ManagerFactoryInterface
     /** @var HelperFactory $helperFactory */
     protected $helperFactory;
 
+    /** @var FileSystemHelper */
+    protected $fileSystemHelper;
+
     /**
      * @param InternalEntityFactory $entityFactory
      * @param HelperFactory $helperFactory
@@ -39,14 +44,28 @@ class ManagerFactory implements ManagerFactoryInterface
 
     /**
      * @param OptionsManagerInterface $optionsManager
+     * @return FileSystemHelper
+     */
+    private function createFileSystemHelper(OptionsManagerInterface $optionsManager)
+    {
+        if ($this->fileSystemHelper !== null) {
+            return $this->fileSystemHelper;
+        }
+
+        $this->fileSystemHelper = $this->helperFactory->createSpecificFileSystemHelper($optionsManager, $this->entityFactory);
+        $this->fileSystemHelper->createBaseFilesAndFolders();
+        return $this->fileSystemHelper;
+    }
+
+    /**
+     * @param OptionsManagerInterface $optionsManager
      * @return WorkbookManager
      */
     public function createWorkbookManager(OptionsManagerInterface $optionsManager)
     {
         $workbook = $this->entityFactory->createWorkbook();
 
-        $fileSystemHelper = $this->helperFactory->createSpecificFileSystemHelper($optionsManager, $this->entityFactory);
-        $fileSystemHelper->createBaseFilesAndFolders();
+        $fileSystemHelper = $this->createFileSystemHelper($optionsManager);
 
         $xlFolder = $fileSystemHelper->getXlFolder();
         $sharedStringsManager = $this->createSharedStringsManager($xlFolder);
@@ -83,6 +102,7 @@ class ManagerFactory implements ManagerFactoryInterface
         $rowManager = $this->createRowManager();
         $stringsEscaper = $this->helperFactory->createStringsEscaper();
         $stringsHelper = $this->helperFactory->createStringHelper();
+        $relsManager = $this->createRelsManager($optionsManager);
 
         return new WorksheetManager(
             $optionsManager,
@@ -92,7 +112,22 @@ class ManagerFactory implements ManagerFactoryInterface
             $sharedStringsManager,
             $stringsEscaper,
             $stringsHelper,
-            $this->entityFactory
+            $relsManager
+        );
+    }
+
+    /**
+     * @param OptionsManagerInterface $optionsManager
+     * @return WorksheetRelsManager
+     */
+    public function createRelsManager(OptionsManagerInterface $optionsManager)
+    {
+        $stringsEscaper = $this->helperFactory->createStringsEscaper();
+        $fileSystemHelper = $this->createFileSystemHelper($optionsManager);;
+
+        return new WorksheetRelsManager(
+            $stringsEscaper,
+            $fileSystemHelper
         );
     }
 

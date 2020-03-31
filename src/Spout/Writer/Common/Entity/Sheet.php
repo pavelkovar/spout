@@ -3,6 +3,7 @@
 namespace Box\Spout\Writer\Common\Entity;
 
 use Box\Spout\Writer\Common\Entity\View\SheetView;
+use Box\Spout\Writer\Common\Helper\CellHelper;
 use Box\Spout\Writer\Common\Manager\SheetManager;
 
 /**
@@ -30,6 +31,9 @@ class Sheet
 
     /** @var SheetView */
     private $sheetView;
+
+    /** @var string[] */
+    private $sheetHyperlinks = [];
 
     /**
      * @param int $sheetIndex Index of the sheet, based on order in the workbook (zero-based)
@@ -80,8 +84,8 @@ class Sheet
      *  - it should be unique
      *
      * @param string $name Name of the sheet
-     * @throws \Box\Spout\Writer\Exception\InvalidSheetNameException If the sheet's name is invalid.
      * @return Sheet
+     * @throws \Box\Spout\Writer\Exception\InvalidSheetNameException If the sheet's name is invalid.
      */
     public function setName($name)
     {
@@ -127,5 +131,26 @@ class Sheet
     public function getSheetView()
     {
         return $this->sheetView;
+    }
+
+    /**
+     * @param int $rowIndex zero based
+     * @param int $columnIndex zero based
+     * @param string $link
+     */
+    public function addSheetHyperlink($columnIndex, $rowIndex, $link)
+    {
+        $colLetter = CellHelper::getColumnLettersFromColumnIndex($columnIndex);
+        $column = $colLetter . ($rowIndex + 1);
+
+        $this->sheetHyperlinks[$column] = $link;
+    }
+
+    /**
+     * @return string[]
+     */
+    public function getSheetHyperlinks()
+    {
+        return $this->sheetHyperlinks;
     }
 }

@@ -14,6 +14,12 @@ class Worksheet
     /** @var resource Pointer to the sheet data file (e.g. xl/worksheets/sheet1.xml) */
     private $filePointer;
 
+    /** @var resource|null */
+    private $relsFilePointer;
+
+    /** @var int */
+    private $relsIndex;
+
     /** @var Sheet The "external" sheet */
     private $externalSheet;
 
@@ -36,6 +42,7 @@ class Worksheet
         $this->externalSheet = $externalSheet;
         $this->maxNumColumns = 0;
         $this->lastWrittenRowIndex = 0;
+        $this->relsIndex = 1;
     }
 
     /**
@@ -109,5 +116,29 @@ class Worksheet
     {
         // sheet index is zero-based, while ID is 1-based
         return $this->externalSheet->getIndex() + 1;
+    }
+
+    /**
+     * @return resource|null
+     */
+    public function getRelsFilePointer()
+    {
+        return $this->relsFilePointer;
+    }
+
+    /**
+     * @param resource|null $relsFilePointer
+     */
+    public function setRelsFilePointer($relsFilePointer)
+    {
+        $this->relsFilePointer = $relsFilePointer;
+    }
+
+    /**
+     * @return int
+     */
+    public function incRelsId()
+    {
+        return $this->relsIndex++;
     }
 }
